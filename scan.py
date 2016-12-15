@@ -2,6 +2,12 @@
 
 import os
 
+
+from platform import node
+from requests import get
+from requests.exceptions import RequestException
+
+
 from subprocess import run,check_output, PIPE, STDOUT, CalledProcessError
 from argparse import ArgumentParser
 from jinja2 import Template, FileSystemLoader, Environment
@@ -11,9 +17,10 @@ from datetime import datetime
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
 from email import encoders
 
-def send_mail(file_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),'report.html'),repicient='<hidden>'):
+def send_mail(data,repicient):
 
     user        = '<hidden>'
     password    = '<hidden>'
@@ -23,15 +30,9 @@ def send_mail(file_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),
     msg = MIMEMultipart()
     msg['From']    = user
     msg['To']      = repicient
-    msg['Subject'] = header_subj
-    attach = MIMEBase('application','octet-stream')
+    msg['Subject'] = "[{0}] ClamAV: scanned {1} on {2} ({3})".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), parser.parse_args().dir, node(), get_ip())
 
-    with open(file_path, mode = 'r') as file_obj:
-        attach.set_payload(file_obj.read())
-
-    encoders.encode_base64(attach)
-    attach.add_header('Content-Disposition', "attachment; filename = report.html")
-    msg.attach(attach)
+    msg.attach(MIMEText(data,'html'))
 
     client = SMTP(host='smtp.office365.com', port=587)
     client.starttls()
@@ -40,12 +41,18 @@ def send_mail(file_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),
     client.sendmail(header_from,repicient,msg.as_string())
     client.quit()
 
-parser = ArgumentParser(description = "Input params: directory to scan. Launch example: ./scan.py --dir '/root' ")
-parser.add_argument('--dir',type = str,help = 'directory to scan')
-parser.add_argument('--sendto',type = str, help = 'report repicient address')
+
+def get_ip():
+    try:
+        return get('https://api.ipify.org').text
+    except RequestException:
+        return '0.0.0.0'
+
+parser = ArgumentParser(description = "ClamAV Scanner. Example: ./scan.py '/root' 'billgates@microsoft.com' ")
+parser.add_argument('dir',type = str,help = 'Directory to scan')
+parser.add_argument('sendto',type = str, help = 'Report repicient address')
 
 data = []
-
 if parser.parse_args().dir:
     try:
         for line in run(['clamscan','-r','-i','--no-summary','{}'.format(parser.parse_args().dir)], stdout=PIPE).stdout.decode('utf-8').split('\n'):
@@ -53,8 +60,9 @@ if parser.parse_args().dir:
     except OSError:
          print("Please check clamav is installed or present in PATH") 
          pass
-else:
-    print("No directory is given. Please provide me with --dir. Exiting...")
+# Should not happen anyway since argparse protects me
+elif not parser.parse_args().dir or not parser.parse_args().sendto:
+    print("No directory or repicient is given. Please check. Help: scan.py -h. Exiting...")
     exit(1)
 
 loader   = FileSystemLoader( os.path.join(os.path.dirname(os.path.abspath(__file__)),'templates') )
@@ -62,7 +70,12 @@ env      = Environment(loader=loader, trim_blocks = True, lstrip_blocks = True)
 template = env.get_template('report.tmpl')
 
 if data:
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'report.html'), mode='w',encoding='utf8') as report_file:
-        report_file.write(template.render( data = { 'data':data,'time':datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'dir':parser.parse_args().dir }))
-    send_mail(repicient=parser.parse_args().sendto)
+    rendered_html = (template.render(data = {
+                                             'data':data,
+                                             'time':datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                             'dir':parser.parse_args().dir,
+                                             'host':node(),
+                                             'ip':get_ip()
+                                            }))
+    send_mail(rendered_html, repicient=parser.parse_args().sendto)
 
