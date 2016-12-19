@@ -11,12 +11,14 @@ from jinja2 import Template, FileSystemLoader, Environment
 from smtplib import SMTP
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 
 def send_mail(html, recipient, subject):
-    user = '<hidden>'
-    password = '<hidden>'
-    header_from = '<hidden>'
+    user = 'noreply@apptimized.com'
+    password = 'Wn9TBV3p9uzahwSmZX5dy6vAxEyWcneV'
+    header_from = 'Apptimized Notification <noreply@apptimized.com>'
 
     msg = MIMEMultipart()
     msg['From'] = user
@@ -25,6 +27,12 @@ def send_mail(html, recipient, subject):
 
     msg.attach(MIMEText(html, 'html'))
 
+    report_attached = MIMEBase('application','octet-stream')
+    report_attached.set_payload(html)
+    encoders.encode_base64(report_attached)
+    report_attached.add_header('Content-Disposition', "attachment; filename = report.html")
+    msg.attach(report_attached)
+    
     client = SMTP(host='smtp.office365.com', port=587)
     client.starttls()
     client.login(user, password)
@@ -36,18 +44,27 @@ def send_mail(html, recipient, subject):
 def parse_clamav(parsed_args_p):
 
     data = []
+    data2 = []
 
     try:
         for line in Popen(['clamscan', '-r', '-i', '--no-summary', '{}'.format(parsed_args_p.dir)],
                         stdout=PIPE).communicate():
             if line:
-                data = "".join(line.decode('utf-8').split('FOUND')).split()
-                data = [ list(x) for x in (zip(data[::2], data[1::2]))]
+
+                data = line.decode('utf-8').split('FOUND\n')[:-1]
+                
+                for elem in data[:]:
+                    elem = elem.split(':')
+                    data2.append(elem)
+            data = data2
+
+#                data = "".join(line.decode('utf-8').split()).split('FOUND')
+#                print("Debug: 1st data: " + str(data))
+#                data = [ list(x.split(":")) for x in (zip(data[::2], data[1::2]))]
+#                print("Debug: 2nd data: " + str(data))
     except OSError:
         print("Please check ClamAV is installed or present in PATH")
         exit(1)
-
-    print("DBG: " + str(data))
 
     if not data:
         exit(0)
@@ -55,7 +72,7 @@ def parse_clamav(parsed_args_p):
     return data
 
 
-def form_template(data, parsed_args_t, now_t, host_t):
+def form_template(data, parsed_args_t, host_t, now_t, time_end):
 
     loader = FileSystemLoader(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
     env = Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
@@ -65,7 +82,8 @@ def form_template(data, parsed_args_t, now_t, host_t):
         'data': data,
         'time': now_t,
         'dir': parsed_args_t.dir,
-        'host': host_t
+        'host': host_t,
+        'time_end': time_end
     }))
 
     return rendered_html
@@ -80,5 +98,5 @@ if __name__ == "__main__":
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     host = node()
 
-    send_mail(form_template(parse_clamav(parsed_args), parsed_args, now, host), recipient=parsed_args.sendto,
+    send_mail(form_template(parse_clamav(parsed_args), parsed_args, host, now, datetime.now().strftime('%Y-%m-%d %H:%M:%S')), recipient=parsed_args.sendto,
               subject="[{0}] ClamAV: scanned {1} on {2}".format(now, parsed_args.dir, host))
