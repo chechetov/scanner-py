@@ -4,7 +4,7 @@ import os
 from sys import exit
 from platform import node
 from datetime import datetime
-from subprocess import run, check_output, PIPE, STDOUT, CalledProcessError
+from subprocess import run, PIPE, STDOUT, CalledProcessError
 from argparse import ArgumentParser
 from jinja2 import Template, FileSystemLoader, Environment
 from smtplib import SMTP
@@ -13,9 +13,9 @@ from email.mime.text import MIMEText
 
 
 def send_mail(html, recipient, subject):
-    user = '<hidden>'
-    password = '<hidden>'
-    header_from = '<hidden>'
+    user = 'noreply@apptimized.com'
+    password = 'Wn9TBV3p9uzahwSmZX5dy6vAxEyWcneV'
+    header_from = 'Apptimized Notification <noreply@apptimized.com>'
 
     msg = MIMEMultipart()
     msg['From'] = user
@@ -45,10 +45,19 @@ def parse_clamav(parsed_args_p):
         exit(1)
 
     if not data:
-        sys.exit(0)
+        exit(0)
 
     return data
 
+def process_whitelist(data):
+
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'whitelist.txt'),'r') as whitelist:
+        for line in whitelist:
+            for elem in data[:]:
+                if line.rstrip() in elem:
+                    data.remove(elem)
+
+    return data
 
 def form_template(data, parsed_args_t, now_t, host_t):
 
@@ -75,5 +84,6 @@ if __name__ == "__main__":
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     host = node()
 
-    send_mail(form_template(parse_clamav(parsed_args), parsed_args, now, host), recipient=parsed_args.sendto,
+
+    send_mail(form_template(process_whitelist(parse_clamav(parsed_args)), parsed_args, now, host), recipient=parsed_args.sendto,
               subject="[{0}] ClamAV: scanned {1} on {2}".format(now, parsed_args.dir, host))
