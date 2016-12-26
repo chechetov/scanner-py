@@ -49,13 +49,11 @@ def parse_clamav(parsed_args_p):
 
     return data
 
+
 def process_whitelist(data):
 
-    whitelist = [line.rstrip() for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'whitelist.txt'),'r')]
-
-    for elem in data[:]:
-        if elem[0] in whitelist:
-            data.remove(elem)
+    data = [element for element in data if element[0] not in
+            [l.strip() for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'whitelist.txt'), 'r').readlines()]]
 
     return data
 
