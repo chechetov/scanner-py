@@ -106,5 +106,5 @@ if __name__ == "__main__":
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     host = node()
 
-    send_mail(form_template(process_whitelist(parse_clamav(parsed_args)), parsed_args, now, host), recipient=parsed_args.sendto,
+    send_mail(form_template(process_whitelist(parse_clamav(parsed_args)), parsed_args, host, now, datetime.now().strftime('%Y-%m-%d %H:%M:%S')), recipient=parsed_args.sendto,
               subject="[{0}] ClamAV: scanned {1} on {2}".format(now, parsed_args.dir, host))
