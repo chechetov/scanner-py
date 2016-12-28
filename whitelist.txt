@@ -1,2 +1,0 @@
-/root/viruses/test2.zip
-/root/viruses/eicarcom2.zip

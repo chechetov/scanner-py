@@ -13,9 +13,22 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from time import sleep
+import io
+
+import json
+import hashlib
+from virus_total_apis import PublicApi as VirusTotalPublicApi
 
 
 def send_mail(html, recipient, subject):
+
+    """
+
+    Sends email with report
+
+    """
+
     user = 'noreply@apptimized.com'
     password = 'Wn9TBV3p9uzahwSmZX5dy6vAxEyWcneV'
     header_from = 'Apptimized Notification <noreply@apptimized.com>'
@@ -37,11 +50,17 @@ def send_mail(html, recipient, subject):
     client.starttls()
     client.login(user, password)
 
+    print("sending e-mail")
+
     client.sendmail(header_from, recipient, msg.as_string())
     client.quit()
 
 
 def parse_clamav(parsed_args_p):
+
+    """
+    Launches ClamAV and returns its output in form [ [path,virusname] ]
+    """
 
     data = []
     data2 = []
@@ -66,21 +85,106 @@ def parse_clamav(parsed_args_p):
         print("Please check ClamAV is installed or present in PATH")
         exit(1)
 
+    print("DATA: " + str(data))
+
     if not data:
         exit(0)
+
+    check_all_files_on_virustotal(data)
 
     return data
 
 
 def process_whitelist(data):
 
+    """
+    Removes everything in whitelist from data
+    """
+
     data = [element for element in data if element[0] not in
             [l.strip() for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'whitelist.txt'), 'r').readlines()]]
 
     return data
 
+def add_to_whitelist(file):
+
+    '''
+    Checks if line is present in whitelist and adds the file otherwise
+    '''
+
+    if file not in [line.strip() for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'whitelist.txt'),'r').readlines()]:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'whitelist.txt'), 'a') as whitelist:
+            whitelist.write("\n" + file)
+
+
+def open_binary_file(path_to_file):
+
+    '''
+    Returns first and last 32000 bytes from file
+    '''
+
+    f = open(path_to_file, 'rb')
+    return (f.read(32000),f.read(f.seek(os.path.getsize(path_to_file) - 32000)))
+
+
+def send_request(file, from_disk, original_path):
+
+    API_KEY = '58258e6e4c652282c0757c8d1f0ede835c4b0e2b5b35a077dbe196b603e99ee3'
+    vt = VirusTotalPublicApi(API_KEY)
+
+    scanned_file = {'response_code':000}
+    report       = {'response_code':000}
+
+    while scanned_file['response_code'] != 200:
+
+        scanned_file = json.loads(json.dumps(vt.scan_file(this_file=file, from_disk=from_disk), sort_keys=True, indent=4))
+        print("Scanned_file_resp: " + str(scanned_file['response_code']))
+
+        while report['response_code'] != 200:
+            sleep(25)
+            report = vt.get_file_report(scanned_file['results']['resource'])
+            print("report_resp: " + str(report['response_code']))
+
+            try:
+                report = vt.get_file_report(scanned_file['results']['resource'])
+                print(report)
+                ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
+                if ratio and ratio < 85.0:
+                    add_to_whitelist(original_path)
+                print("final ratio: " + str(ratio))
+            except KeyError:
+                pass
+        return 0
+
+
+def check_one_file_on_virustotal(file):
+
+    """
+    Sends file to virustotal if file < 32MB
+    Else sends first 32MB and last 32MB
+    """
+
+    file = file[0]
+
+    if os.path.getsize(file) > 32000:
+        for chunk in open_binary_file(file):
+            print("TYPE: " + str(type(chunk)))
+            send_request(chunk,False,file)
+    else:
+        send_request(file,True,file)
+
+
+def check_all_files_on_virustotal(data):
+
+    if data:
+        [check_one_file_on_virustotal(file) for file in [elem for elem in data]]
+
 
 def form_template(data, parsed_args_t, host_t, now_t, time_end):
+
+    """
+    Forms html template from initial data
+    """
 
     loader = FileSystemLoader(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
     env = Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
@@ -106,5 +210,6 @@ if __name__ == "__main__":
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     host = node()
 
-    send_mail(form_template(process_whitelist(parse_clamav(parsed_args)), parsed_args, host, now, datetime.now().strftime('%Y-%m-%d %H:%M:%S')), recipient=parsed_args.sendto,
-              subject="[{0}] ClamAV: scanned {1} on {2}".format(now, parsed_args.dir, host))
+    send_mail(form_template(
+        process_whitelist(parse_clamav(parsed_args)), parsed_args, host, now, datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                           ), recipient=parsed_args.sendto, subject="[{0}] ClamAV: scanned {1} on {2}".format(now, parsed_args.dir, host))
