@@ -146,7 +146,7 @@ def send_request(file, from_disk, original_path):
                 ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
                 if ratio and ratio < 85.0:
                     add_to_whitelist(original_path)
-                print("final ratio is {0} for file {1}: ".format(original_path,str(ratio)))
+                print("final ratio is {1} for file {0}: ".format(original_path,str(ratio)))
             except KeyError:
                 pass
         return 0
