@@ -110,9 +110,13 @@ def add_to_whitelist(file):
     Checks if line is present in whitelist and adds the file otherwise
     '''
 
+    print("add_to_whitelist() started")
+
     if file not in [line.strip() for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'whitelist.txt'),'r').readlines()]:
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'whitelist.txt'), 'a') as whitelist:
             whitelist.write("\n" + file)
+
+    print("add_to_whitelist() ended")
 
 
 def open_binary_file(path_to_file):
@@ -126,6 +130,9 @@ def open_binary_file(path_to_file):
 
 
 def send_request(file, from_disk, original_path):
+
+    print("-" * 10)
+    print("args: file: {0}, from_disk: {1}, original_path: {2} ".format(type(file), from_disk, original_path))
 
     API_KEY = '58258e6e4c652282c0757c8d1f0ede835c4b0e2b5b35a077dbe196b603e99ee3'
     vt = VirusTotalPublicApi(API_KEY)
@@ -144,9 +151,15 @@ def send_request(file, from_disk, original_path):
             try:
                 report = vt.get_file_report(scanned_file['results']['resource'])
                 ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
-                if ratio and ratio < 85.0:
+
+                print("Positives: {0}, Total {1}".format(report['results']['positives'], report['results']['total']))
+
+                print("Ratio is {0} for file {1}".format(ratio,original_path))
+
+                if ratio < 85.0:
+                    print("Adding to whitelist: {0}".format(original_path))
                     add_to_whitelist(original_path)
-                print("final ratio is {1} for file {0}: ".format(original_path,str(ratio)))
+
             except KeyError:
                 pass
         return 0
