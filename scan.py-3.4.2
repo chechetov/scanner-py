@@ -174,7 +174,7 @@ def check_one_file_on_virustotal(file):
 
     file = file[0]
 
-    if os.path.getsize(file) > 32000:
+    if os.path.getsize(file) > 32000000:
         for chunk in open_binary_file(file):
             send_request(chunk,False,file)
     else:
