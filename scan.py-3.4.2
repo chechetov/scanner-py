@@ -131,6 +131,7 @@ def open_binary_file(path_to_file):
 
 def send_request(file, from_disk, original_path):
 
+    print(" " * 10 + "\n")
     print("#" * 10)
     print("args: file: {0}, from_disk: {1}, original_path: {2} ".format(type(file), from_disk, original_path))
 
@@ -144,7 +145,6 @@ def send_request(file, from_disk, original_path):
 
         scanned_file = json.loads(json.dumps(vt.scan_file(this_file=file, from_disk=from_disk), sort_keys=True, indent=4))
 
-        print("-" * 10)
         print("scanned_file: {0}".format(scanned_file))
         print("-" * 10)
 
@@ -153,7 +153,6 @@ def send_request(file, from_disk, original_path):
             sleep(15)
             report = vt.get_file_report(scanned_file['results']['resource'])
 
-            print("-" * 10)
             print("report: {0}".format(report))
             print("-" * 10)
 
