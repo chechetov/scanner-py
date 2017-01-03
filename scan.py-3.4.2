@@ -150,14 +150,14 @@ def send_request(file, from_disk, original_path):
 
 
         while report['response_code'] != 200:
-            sleep(15)
+            #sleep(15)
             report = vt.get_file_report(scanned_file['results']['resource'])
 
             print("report: {0}".format(report))
             print("-" * 10)
 
             try:
-                report = vt.get_file_report(scanned_file['results']['resource'])
+                #report = vt.get_file_report(scanned_file['results']['resource'])
                 ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
 
                 print("Positives: {0}, Total {1}".format(report['results']['positives'], report['results']['total']))
