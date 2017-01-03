@@ -153,8 +153,9 @@ def send_request(file, from_disk, original_path):
             #sleep(15)
             report = vt.get_file_report(scanned_file['results']['resource'])
 
-            print("report: {0}".format(report))
-            print("-" * 10)
+            if report['response_code'] != 204:
+                print("report: {0}".format(report))
+                print("-" * 10)
 
             try:
                 #report = vt.get_file_report(scanned_file['results']['resource'])
