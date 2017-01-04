@@ -19,7 +19,9 @@ import io
 import json
 import hashlib
 from virus_total_apis import PublicApi as VirusTotalPublicApi
+from Logger import Logger
 
+logger = Logger()
 
 def send_mail(html, recipient, subject):
 
@@ -50,9 +52,9 @@ def send_mail(html, recipient, subject):
     client.starttls()
     client.login(user, password)
 
-    print("sending e-mail")
-
+    logger.add("Sending e-mail to {0}".format(recipient))
     client.sendmail(header_from, recipient, msg.as_string())
+    logger.add("E-mail sent")
     client.quit()
 
 
@@ -77,10 +79,6 @@ def parse_clamav(parsed_args_p):
                     data2.append(elem)
             data = data2
 
-#                data = "".join(line.decode('utf-8').split()).split('FOUND')
-#                print("Debug: 1st data: " + str(data))
-#                data = [ list(x.split(":")) for x in (zip(data[::2], data[1::2]))]
-#                print("Debug: 2nd data: " + str(data))
     except OSError:
         print("Please check ClamAV is installed or present in PATH")
         exit(1)
@@ -88,6 +86,7 @@ def parse_clamav(parsed_args_p):
     if not data:
         exit(0)
 
+    logger.add("Gathered data: {0}".format(data))
     check_all_files_on_virustotal(data)
 
     return data
@@ -110,13 +109,11 @@ def add_to_whitelist(file):
     Checks if line is present in whitelist and adds the file otherwise
     '''
 
-    print("add_to_whitelist() started")
+    logger.add("Adding to whitelist: \n {0}".format(file))
 
     if file not in [line.strip() for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'whitelist.txt'),'r').readlines()]:
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'whitelist.txt'), 'a') as whitelist:
             whitelist.write("\n" + file)
-
-    print("add_to_whitelist() ended")
 
 
 def open_binary_file(path_to_file):
@@ -131,9 +128,7 @@ def open_binary_file(path_to_file):
 
 def send_request(file, from_disk, original_path):
 
-    print(" " * 10 + "\n")
-    print("#" * 10)
-    print("args: file: {0}, from_disk: {1}, original_path: {2} ".format(type(file), from_disk, original_path))
+    logger.add("Sending request for file: \n {0}".format(original_path))
 
     API_KEY = '58258e6e4c652282c0757c8d1f0ede835c4b0e2b5b35a077dbe196b603e99ee3'
     vt = VirusTotalPublicApi(API_KEY)
@@ -145,38 +140,34 @@ def send_request(file, from_disk, original_path):
         scanned_file = json.loads(json.dumps(vt.scan_file(this_file=file, from_disk=from_disk), sort_keys=True, indent=4))
 
         try:
-            print("scanned_file_msg: {0}".format(scanned_file['results']['verbose_msg']))
-            print("-" * 10)
+            logger.add("Responce: scan_file: {0}".format(scanned_file['results']['verbose_msg']))
         except KeyError:
-            print("error_scan_file: {0}".format(scanned_file))
+            logger.add("Error in scan_file: {0}".format(scanned_file))
             pass
 
         while report['response_code'] != 200:
-
             report = vt.get_file_report(scanned_file['results']['resource'])
 
             if report['response_code'] == 204:
-                print("Sleeping: {0}".format(report))
+                logger.add("Sleeping for 15 seconds: {0}".format(report))
                 sleep(15)
                 continue
 
             try:
-                print("report_code_1: {0}, report_code_2: {1} ".format(report['response_code'], report['results']['response_code']))
-                print("-" * 10)
+                logger.add("Responce: get_file_report: {0} & {1}".format(report['response_code'], report['results']['response_code']))
             except KeyError:
-                 print("error_report: {0}".format(report))
-                 pass
+                logger.add("Error in get_file_report: {0}".format(report))
+                pass
             if report['response_code'] == 200 and report['results']['response_code'] != 1:
-                    print("File lost in queue, rescanning")
+                logger.add("API bad responce. File lost in queue, rescanning")
                     check_one_file_on_virustotal([file])
                     break
             try:
                 ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
-                print("Positives: {0} , Total {1}".format(report['results']['positives'], report['results']['total']))
-                print("Ratio is {0}".format(ratio))
+                logger.add("Positives: {0} , Total {1}".format(report['results']['positives'], report['results']['total']))
+                logger.add("Ratio is {0}".format(ratio))
 
                 if ratio < 85.0:
-                    print("Adding to whitelist: {0}".format(original_path))
                     add_to_whitelist(original_path)
             except KeyError:
                 pass
@@ -194,9 +185,9 @@ def check_one_file_on_virustotal(file):
 
     if os.path.getsize(file) > 32000000:
         for chunk in open_binary_file(file):
-            send_request(chunk,False,file)
+            send_request(file=chunk,from_disk=False,original_path=file)
     else:
-        send_request(file,True,file)
+        send_request(file=file,from_disk=True,original_path=file)
 
 
 def check_all_files_on_virustotal(data):
