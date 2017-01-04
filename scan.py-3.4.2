@@ -155,7 +155,7 @@ def send_request(file, from_disk, original_path):
 
             if report['response_code'] == 200 and report['results']['response_code'] != 1:
                 print("File lost in queue, rescanning")
-                check_one_file_on_virustotal(file)
+                check_one_file_on_virustotal([file])
                 break
 
             if report['response_code'] != 204:
