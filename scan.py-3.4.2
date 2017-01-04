@@ -142,14 +142,9 @@ def send_request(file, from_disk, original_path):
     report       = {'response_code':000}
 
     while scanned_file['response_code'] != 200:
-
-        print('rescan_file:{0}'.format(rescan_file))
-
         scanned_file = json.loads(json.dumps(vt.scan_file(this_file=file, from_disk=from_disk), sort_keys=True, indent=4))
-
         print("scanned_file: {0}".format(scanned_file))
         print("-" * 10)
-
 
         while report['response_code'] != 200:
             #sleep(15)
