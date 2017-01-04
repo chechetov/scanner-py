@@ -155,7 +155,7 @@ def send_request(file, from_disk, original_path):
             report = vt.get_file_report(scanned_file['results']['resource'])
 
             if file == '/var/lib/vz/private/Projects/EDEKA/PKG/Microsoft-ProjectStandard2010-14.0.7145.5000_EDEKA-693/Microsoft-ProjectStandard2010-14.0.7145.5000/Package/Files/Office.de-de/OfficeLR.cab':
-                report['result']['response_code'] = 0
+                report['results']['response_code'] = 0
 
             if report['response_code'] == 200 and report['results']['response_code'] != 1:
                 rescan_file = True
