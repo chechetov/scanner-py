@@ -33,9 +33,9 @@ def send_mail(html, recipient, subject):
 
     """
 
-    user = config['Main']['EmailUser']
-    password = config['Main']['EmailPassword']
-    header_from = config['Main']['HeaderFrom']
+    user = str(config['Main']['EmailUser'])
+    password = str(config['Main']['EmailPassword'])
+    header_from = str(config['Main']['HeaderFrom'])
 
     msg = MIMEMultipart()
     msg['From'] = user
@@ -93,14 +93,17 @@ def parse_clamav(parsed_args_p):
     return data
 
 
-def process_whitelist(data):
+def process_whitelist(data, white_list = 'whitelist.txt'):
     """
     Removes everything in whitelist from data
     """
 
+    if not os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list)):
+        open(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list), 'a').close()
+
     data = [element for element in data if element[0] not in
             [l.strip() for l in
-             open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'whitelist.txt'), 'r').readlines()]]
+             open(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list), 'r').readlines()]]
 
     return data
 
@@ -131,8 +134,9 @@ def open_binary_file(path_to_file):
 
 
 def send_request(file, from_disk, original_path):
-    logger.add("\n Processing file {0}".format(original_path))
-    api_key = config['Main']['ApiKey']
+    logger.add("-" * 10)
+    logger.add("File {0}".format(original_path))
+    api_key = str(config['Main']['ApiKey'])
     vt = VirusTotalPublicApi(api_key)
 
     scanned_file = {'response_code': 000}
