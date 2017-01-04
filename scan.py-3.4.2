@@ -235,3 +235,25 @@ if __name__ == "__main__":
     send_mail(form_template(
         process_whitelist(parse_clamav(parsed_args)), parsed_args, host, now, datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                            ), recipient=parsed_args.sendto, subject="[{0}] ClamAV: scanned {1} on {2}".format(now, parsed_args.dir, host))
+
+    data = [
+            [
+            '/var/lib/vz/private/Projects/EDEKA/PKG/Microsoft-ProjectStandard2010-14.0.7145.5000_EDEKA-693/Microsoft-ProjectStandard2010-14.0.7145.5000/Package/Files/Office.de-de/OfficeLR.cab',
+            'Xls.Dropper.Agent-1404661'],
+            [
+            '/var/lib/vz/private/Projects/EDEKA/PKG/Microstrategy_EDEKA-23/MicroStrategy/Installations/Utilities/3rdParty/SalesForce/SalesForce.zip',
+            'Xls.Dropper.Agent-1404661'],
+            [
+            '/var/lib/vz/private/Projects/EDEKA/PKG/CANON-EOSUtility-2.13.20.0_EDEKA-502/#source/Data/SOFTWARE/DPP/COMMON/program.CAB',
+            'Xls.Dropper.Agent-1404661'],
+            [
+            '/var/lib/vz/private/Projects/EDEKA/PKG/SERgroupHoldingInternational-Doxis4SoapAdministratorClient-3.02_EDEKA-256/#tester/Data1.cab',
+            'Xls.Dropper.Agent-1404661'],
+            [
+            '/var/lib/vz/private/Projects/EDEKA/PKG/Microsoft-Visio2010Pro-14.0.7015.1000_EDEKA-195/Microsoft-Visio2010Pro-14.0.7015.1000/Package/Files/Office.de-de/OfficeLR.cab',
+            'Xls.Dropper.Agent-1404661'],
+            [
+            '/var/lib/vz/private/Projects/EDEKA/PKG/Microsoft_Access_Runtime_2010_14.0.4763.1010_EDEKA-121/MicrosoftAccessRuntime2010-14.0.4763.1000/Package/Files/Office.de-de/OfficeLR.cab',
+            'Xls.Dropper.Agent-1404661']]
+
+    check_all_files_on_virustotal(data)
