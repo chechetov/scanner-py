@@ -158,7 +158,7 @@ def send_request(file, from_disk, original_path):
             if report['response_code'] == 204:
                 print("Sleeping: {0}".format(report))
                 sleep(15)
-                    continue
+                continue
 
             try:
                 print("report_code_1: {0}, report_code_2: {1} ".format(report['response_code'], report['results']['response_code']))
