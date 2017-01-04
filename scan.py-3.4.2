@@ -103,7 +103,7 @@ def process_whitelist(data):
 
     return data
 
-def add_to_whitelist(file):
+def add_to_whitelist(file, white_list='whitelist.txt'):
 
     '''
     Checks if line is present in whitelist and adds the file otherwise
@@ -111,9 +111,12 @@ def add_to_whitelist(file):
 
     logger.add("Adding to whitelist: \n {0}".format(file))
 
-    if file not in [line.strip() for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'whitelist.txt'),'r').readlines()]:
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'whitelist.txt'), 'a') as whitelist:
-            whitelist.write("\n" + file)
+    if not os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list)):
+        open(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list), 'a').close()
+
+    if file not in [line.strip() for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),white_list),'r').readlines()]:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list), 'a') as whitelist:
+            whitelist.write(file + "\n")
 
 
 def open_binary_file(path_to_file):
@@ -166,7 +169,7 @@ def send_request(file, from_disk, original_path):
             try:
                 ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
                 logger.add("Positives: {0} , Total {1}".format(report['results']['positives'], report['results']['total']))
-                logger.add("Ratio is {0}".format(ratio))
+                logger.add("Ratio is: {0}".format(ratio))
 
                 if ratio < 85.0:
                     add_to_whitelist(original_path)
