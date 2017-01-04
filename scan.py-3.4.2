@@ -140,8 +140,9 @@ def send_request(file, from_disk, original_path):
 
     scanned_file = {'response_code':000}
     report       = {'response_code':000}
+    rescan_file  = False
 
-    while scanned_file['response_code'] != 200:
+    while scanned_file['response_code'] != 200 and rescan_file == False:
 
         scanned_file = json.loads(json.dumps(vt.scan_file(this_file=file, from_disk=from_disk), sort_keys=True, indent=4))
 
@@ -152,6 +153,11 @@ def send_request(file, from_disk, original_path):
         while report['response_code'] != 200:
             #sleep(15)
             report = vt.get_file_report(scanned_file['results']['resource'])
+
+            if report['response_code'] == 200 and report['results']['response_code'] != 1:
+                rescan_file = True
+                print("File lost in queue, rescanning")
+                break
 
             if report['response_code'] != 204:
                 print("report: {0}".format(report))
@@ -168,6 +174,8 @@ def send_request(file, from_disk, original_path):
                 if ratio < 85.0:
                     print("Adding to whitelist: {0}".format(original_path))
                     add_to_whitelist(original_path)
+
+                rescan_file = False
 
             except KeyError:
                 pass
