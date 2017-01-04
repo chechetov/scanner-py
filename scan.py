@@ -104,6 +104,7 @@ def process_whitelist(data, white_list = 'whitelist.txt'):
     data = [element for element in data if element[0] not in
             [l.strip() for l in
              open(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list), 'r').readlines()]]
+    logger.add("After whitelist: {0}".format(data))
 
     return data
 
