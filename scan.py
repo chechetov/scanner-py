@@ -65,6 +65,9 @@ def parse_clamav(parsed_args_p):
     Launches ClamAV and returns its output in form [ [path,virusname] ]
     """
 
+    logger.add("-" * 10)
+    logger.add("Starting scan...")
+
     data = []
     data2 = []
 
@@ -135,7 +138,7 @@ def open_binary_file(path_to_file):
 
 
 def send_request(file, from_disk, original_path):
-    logger.add("-" * 10)
+    logger.add(" " * 10)
     logger.add("File {0}".format(original_path))
     api_key = str(config['Main']['ApiKey'])
     vt = VirusTotalPublicApi(api_key)
