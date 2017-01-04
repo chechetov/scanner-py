@@ -148,29 +148,32 @@ def send_request(file, from_disk, original_path):
             print("scanned_file_msg: {0}".format(scanned_file['results']['verbose_msg']))
             print("-" * 10)
         except KeyError:
-            print("error_scan_file")
+            print("error_scan_file: {0}".format(scanned_file))
             pass
 
         while report['response_code'] != 200:
+
             report = vt.get_file_report(scanned_file['results']['resource'])
 
             if report['response_code'] == 204:
-                print("Sleeping")
+                print("Sleeping: {0}".format(report))
                 sleep(15)
-                continue
-
-            print("report_code_1: {0} \n, report_code_2: {1} ".format(report['response_code'], report['results']['response_code']))
-            print("-" * 10)
-
-            if report['response_code'] == 200 and report['results']['response_code'] != 1:
-                print("File lost in queue, rescanning")
-                check_one_file_on_virustotal([file])
-                break
+                    continue
 
             try:
+                print("report_code_1: {0}, report_code_2: {1} ".format(report['response_code'], report['results']['response_code']))
+                print("-" * 10)
+            except KeyError:
+                 print("error_report: {0}".format(report))
+                 pass
+            if report['response_code'] == 200 and report['results']['response_code'] != 1:
+                    print("File lost in queue, rescanning")
+                    check_one_file_on_virustotal([file])
+                    break
+            try:
                 ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
-                print("Positives: {0}, Total {1}".format(report['results']['positives'], report['results']['total']))
-                print("Ratio is {0} for file {1}".format(ratio,original_path))
+                print("Positives: {0} , Total {1}".format(report['results']['positives'], report['results']['total']))
+                print("Ratio is {0}".format(ratio))
 
                 if ratio < 85.0:
                     print("Adding to whitelist: {0}".format(original_path))
