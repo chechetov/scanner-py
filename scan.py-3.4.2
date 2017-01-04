@@ -147,35 +147,27 @@ def send_request(file, from_disk, original_path):
         print("-" * 10)
 
         while report['response_code'] != 200:
-            #sleep(15)
             report = vt.get_file_report(scanned_file['results']['resource'])
 
-            if file == '/var/lib/vz/private/Projects/EDEKA/PKG/Microsoft-ProjectStandard2010-14.0.7145.5000_EDEKA-693/Microsoft-ProjectStandard2010-14.0.7145.5000/Package/Files/Office.de-de/OfficeLR.cab':
-                report['results']['response_code'] = 0
+            if report['response_code'] == 204:
+                sleep(15)
+
+            print("report: {0}".format(report))
+            print("-" * 10)
 
             if report['response_code'] == 200 and report['results']['response_code'] != 1:
                 print("File lost in queue, rescanning")
                 check_one_file_on_virustotal([file])
                 break
 
-            if report['response_code'] != 204:
-                print("report: {0}".format(report))
-                print("-" * 10)
-
             try:
-                #report = vt.get_file_report(scanned_file['results']['resource'])
                 ratio = round(report['results']['positives']/report['results']['total'] * 100, 2)
-
                 print("Positives: {0}, Total {1}".format(report['results']['positives'], report['results']['total']))
-
                 print("Ratio is {0} for file {1}".format(ratio,original_path))
 
                 if ratio < 85.0:
                     print("Adding to whitelist: {0}".format(original_path))
                     add_to_whitelist(original_path)
-
-                rescan_file = False
-
             except KeyError:
                 pass
         return 0
