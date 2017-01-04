@@ -109,7 +109,7 @@ def add_to_whitelist(file, white_list='whitelist.txt'):
     Checks if line is present in whitelist and adds the file otherwise
     '''
 
-    logger.add("Adding to whitelist: \n {0}".format(file))
+    logger.add("Adding to whitelist")
 
     if not os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list)):
         open(os.path.join(os.path.dirname(os.path.abspath(__file__)), white_list), 'a').close()
@@ -131,7 +131,7 @@ def open_binary_file(path_to_file):
 
 def send_request(file, from_disk, original_path):
 
-    logger.add("Sending request for file: \n {0}".format(original_path))
+    logger.add("\n Processing file {0}".format(original_path))
     API_KEY = '58258e6e4c652282c0757c8d1f0ede835c4b0e2b5b35a077dbe196b603e99ee3'
     vt = VirusTotalPublicApi(API_KEY)
 
@@ -143,7 +143,7 @@ def send_request(file, from_disk, original_path):
         scanned_file = json.loads(json.dumps(vt.scan_file(this_file=file, from_disk=from_disk), sort_keys=True, indent=4))
 
         try:
-            logger.add("Responce: scan_file: {0}".format(scanned_file['results']['verbose_msg']))
+            logger.add("Response: scan_file: {0}".format(scanned_file['results']['verbose_msg']))
         except KeyError:
             logger.add("Error in scan_file: {0}".format(scanned_file))
             pass
@@ -158,12 +158,12 @@ def send_request(file, from_disk, original_path):
                 continue
 
             try:
-                logger.add("Responce: get_file_report: {0} & {1}".format(report['response_code'], report['results']['response_code']))
+                logger.add("Response: get_file_report: {0} & {1}".format(report['response_code'], report['results']['response_code']))
             except KeyError:
                 logger.add("Error in get_file_report: {0}".format(report))
                 pass
             if report['response_code'] == 200 and report['results']['response_code'] != 1:
-                logger.add("API bad responce. File lost in queue, rescanning")
+                logger.add("API bad Response. File lost in queue, rescanning")
                 check_one_file_on_virustotal([file])
                 break
             try:
