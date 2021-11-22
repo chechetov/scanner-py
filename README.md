@@ -7,7 +7,7 @@ Installation:
 1. Clone the repository to target server
 2. Install dependencies using ```pip3 install -r requirements.txt```
 3. Install ClamAV using ```apt-get install clamav```
-4. Add e-mail password to configuration file
+4. Add e-mail and password to configuration file
 
 Usage:
 
